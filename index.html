@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>xml</title>
+
+    <link rel="stylesheet" href="js/layui/css/layui.css" media="all" />
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+
+  <body>
+    <input type="file" name="" id="file" onchange="readerFile()" />
+    <input type="button" value="输出" onclick="TableToJson()" />
+    <div id="wrapper"></div>
+    <div class="contextmenu-item" id="contextmenuItem">修改类型</div>
+    <div class="panel-table-active" id="typeElement">
+      <form class="layui-form" action="">
+        <div class="layui-form-item">
+          <label class="layui-form-label" style="width: 40px">类型</label>
+          <div class="layui-input-block">
+            <input type="radio" name="type" value="string" title="字符串" checked="" />
+            <input type="radio" name="type" value="array" title="数组" />
+            <input type="radio" name="type" value="json" title="对象" />
+          </div>
+        </div>
+      </form>
+    </div>
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <script src="js/layui/layui.all.js"></script>
+    <script src="js/json2xml.js"></script>
+    <!-- json转xml -->
+    <!-- <script src="js/jsonlint.js"></script> -->
+
+    <script type="text/javascript" src="http://www.jsons.cn/Down/jquery.xml2json.js"></script>
+    <script src="js/index.js"></script>
+  </body>
+</html>
