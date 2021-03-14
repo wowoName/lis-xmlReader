@@ -625,7 +625,7 @@ function renderRoot(data) {
 
   panelElement += ' </div>'
 
-  return panelElement//getJsonElement(data) 
+  return  panelElement//getJsonElement(data) 
 }
 
 //渲染表格
@@ -805,10 +805,8 @@ function TableToJson() {
   return new Promise((resolve, reject) => {
     let container = document.getElementById('wrapper'),
       xmlData = getTableData(container);
-      // xmlData=xmlData[ Object.keys(xmlData)[0]]
-      let outterKey=Object.keys(xmlData)[0];
-       innerKey=Object.keys(xmlData[ outterKey])[0];
-       if(outterKey===innerKey)xmlData=xmlData[outterKey];
+     
+      xmlData=xmlData[ Object.keys(xmlData)[0]]
     //json2xml_str
     const result = x2jsone.json2xml_str(xmlData)
     console.log(result)

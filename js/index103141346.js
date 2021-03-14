@@ -611,21 +611,19 @@ function toggleTableState(tableElement) {
 function renderRoot(data) {
   let keys = Object.keys(data),
     key = keys[0],
-    valuesData = Object.values(data);
-
+    valuesData = data[key]
   let panelElement = `<div class="panel container"> <header class='panel-title' data-type="json"> <img src="images/collapse.png" class='collapse-img'/> <span contenteditable="true">${key}</span>:{<span class='count'>${valuesData.length}</span>}<div class="add-object-key" data-type='json'></div></header>`
-  //渲染子级
-  panelElement += getJsonElement(data) //getTable([data])//
 
-  //#start
-  // for (const item in data[key]) {
-  //   panelElement += `<div class="panel container">${renderTable([data[key][item]])}</div>`
+  // if (typeof data[key] !== 'string') {
+  //   //渲染子级
+  //   panelElement += getJsonElement(valuesData)
+  // } else {
+  //   panelElement += `<table class="embedded-table">`
+  //   panelElement += `<tbody>  <tr> <td>${getTblRowOperationElement()}</td> <td>${key}</td><td>${valuesData}</td></tr> </tbody>`
   // }
-  //#end
-
+  panelElement += getJsonElement(valuesData)
   panelElement += ' </div>'
-
-  return panelElement//getJsonElement(data) 
+  return panelElement
 }
 
 //渲染表格
@@ -718,7 +716,7 @@ function getArrayTableHeaderOperationElement(item) {
   return `<div class='header-key'><span contenteditable="true" class='key'>${item}</span> <div class='header-key-del header-key-del-hide'><div></div>`
 }
 //获取表格行操作
-function getTblRowOperationElement(index, copy = 'copy', del = 'delete') {
+function getTblRowOperationElement(index = '', copy = 'copy', del = 'delete') {
   return `<span class='serial'>${index}</span><div class="table-serial"><div class="operation-img"><ul class="menu-item panel-table-active"><li data-type='${copy}'>复制</li><li data-type='${del}'>删除</li></ul></div></div> `
 }
 
@@ -736,21 +734,21 @@ function getTableTdContainer(data, index) {
       ele += `<td><div class="container">`
       ele += getArrTitleElementPre(key, value)
 
-      ele += getGroupTableElement(value)
+      // ele += getGroupTableElement(value)
       //#start
 
-      // ele += `<table class="embedded-table"><thead> <tr> <th><div class="serial-number"></div>  </th><th>${key}</th></tr> </thead><tbody>`
-      // for (const item in value) {
-      //   let operationElement = getTblRowOperationElement(+item + 1, 'copyJson', 'delJson')
-      //   if (typeof value[item] !== 'object') ele += `<tr><td>${operationElement}</td> <td  contenteditable="true">${value[item]}</td></tr>`
-      //   else if (Array.isArray(data[item])) {
-      //     let tblData = Array.isArray(value[item]) ? value[item] : [value[item]]
-      //     ele += `<tr><td>${operationElement}</td>${getArrTitleElement(item, tblData)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
-      //   } else {
-      //     ele += `<tr><td>${operationElement}</td>  <td>${getObjectTitleElement(item, value)} </td</tr>`
-      //   }
-      // }
-      // ele += '</tbody></table>'
+      ele += `<table class="embedded-table"><thead> <tr> <th><div class="serial-number"></div>  </th><th>${key}</th></tr> </thead><tbody>`
+      for (const item in value) {
+        let operationElement = getTblRowOperationElement(+item + 1, 'copyJson', 'delJson')
+        if (typeof value[item] !== 'object') ele += `<tr><td>${operationElement}</td> <td  contenteditable="true">${value[item]}</td></tr>`
+        else if (Array.isArray(data[item])) {
+          let tblData = Array.isArray(value[item]) ? value[item] : [value[item]]
+          ele += `<tr><td>${operationElement}</td>${getArrTitleElement(item, tblData)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
+        } else {
+          ele += `<tr><td>${operationElement}</td>  <td>${getObjectTitleElement(item, value)} </td</tr>`
+        }
+      }
+      ele += '</tbody></table>'
       //#end
       ele += '</div></td>'
     } else {
@@ -803,12 +801,8 @@ function getObjectTitleElement(key, data) {
 //输出更改之后的数据集
 function TableToJson() {
   return new Promise((resolve, reject) => {
-    let container = document.getElementById('wrapper'),
-      xmlData = getTableData(container);
-      // xmlData=xmlData[ Object.keys(xmlData)[0]]
-      let outterKey=Object.keys(xmlData)[0];
-       innerKey=Object.keys(xmlData[ outterKey])[0];
-       if(outterKey===innerKey)xmlData=xmlData[outterKey];
+    const container = document.getElementById('wrapper'),
+      xmlData = getTableData(container)
     //json2xml_str
     const result = x2jsone.json2xml_str(xmlData)
     console.log(result)
@@ -855,7 +849,12 @@ function getJsonXmlData(parentNode) {
         // xmlData[key] = values
         xmlData = Object.assign(xmlData, values)
       } else {
-        xmlData[key] = removeSpecialSymbols(tdData[2].innerHTML) // tdData[1].innerHTML.trim().replace(/[\r\n]/g,'')
+        if (xmlData[key]) {
+          let oldData=xmlData[key]
+           !Array.isArray(xmlData[key])&& (xmlData[key] = []);
+           xmlData[key].push(oldData)
+           xmlData[key].push(removeSpecialSymbols(tdData[2].innerHTML) )
+        } else xmlData[key] = removeSpecialSymbols(tdData[2].innerHTML) // tdData[1].innerHTML.trim().replace(/[\r\n]/g,'')
         // xmlData[key] = values
       }
     }
