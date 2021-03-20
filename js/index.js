@@ -83,7 +83,10 @@ function changeAssocatedPre(event) {
   }
   //找到外层panel类型
   const { container } = getContainer(parentTdNode),
-    type = container.querySelector('.panel-title').dataset.type
+    type = container.querySelector('.panel-title').dataset.type;
+    if(container.classList.contains('outter')){
+      container.querySelector('.key-item').innerHTML=removeSpecialSymbols(event.target.innerHTML)
+    }
   if (type === 'json') changeAssocated('previousSibling', this, event)
   else if (type === 'array') changeTableTheadValues(parentTdNode, this)
   event.stopPropagation()
@@ -150,9 +153,14 @@ function changeAssocatedNext(event) {
   event.target.innerHTML = removeSpecialSymbols(event.target.innerHTML)
   //当前panel 为json 执行
   const { container } = getContainer(this),
-    type = container.querySelector('.panel-title').dataset.type
+    type = container.querySelector('.panel-title').dataset.type;
   //当前panel为 json 并且下一个单元格为 panel执行
   if (type === 'json' && currentTdNextTdNodeType(this.nextSibling)) changeAssocated('nextSibling', this, event)
+  //如果外层panel 为outter 修改值
+  if(container.classList.contains('outter')&&event.target.cellIndex===1){
+    container.querySelector('.key-item').innerHTML=removeSpecialSymbols(event.target.innerHTML)
+  }
+
   event.stopPropagation()
   event.preventDefault()
 }
@@ -613,9 +621,9 @@ function renderRoot(data) {
     key = keys[0],
     valuesData = Object.values(data);
 
-  let panelElement = `<div class="panel container"> <header class='panel-title' data-type="json"> <img src="images/collapse.png" class='collapse-img'/> <span contenteditable="true">${key}</span>:{<span class='count'>${valuesData.length}</span>}<div class="add-object-key" data-type='json'></div></header>`
+  let panelElement = `<div class="panel container outter"> <header class='panel-title' data-type="json"> <img src="images/collapse.png" class='collapse-img'/> <span  class="key-item">${key}</span>:{<span class='count'>${valuesData.length}</span>}<div class="add-object-key" data-type='json'></div></header>`
   //渲染子级
-  panelElement += getJsonElement(data) //getTable([data])//
+  panelElement += getJsonElement(data,false) //getTable([data])//
 
   //#start
   // for (const item in data[key]) {
@@ -625,7 +633,7 @@ function renderRoot(data) {
 
   panelElement += ' </div>'
 
-  return panelElement//getJsonElement(data) 
+  return panelElement// getJsonElement(data) 
 }
 
 //渲染表格
@@ -770,16 +778,17 @@ function getGroupTableElement(data) {
   }
   return ele
 }
-function getJsonElement(data) {
+function getJsonElement(data,showFirstTd=true) {
   let ele = '<table class="embedded-table">',
-    operationElement = getTblRowOperationElement('', 'copyJson', 'delJson')
+    operationElement = getTblRowOperationElement('', 'copyJson', 'delJson'),
+    tdElement=showFirstTd?`<td>${operationElement}</td>`:'<td style="display:none"></td>';
   for (const key in data) {
-    if (typeof data[key] !== 'object') ele += `<tr><td>${operationElement}</td> <td  contenteditable="true">${key}</td><td  contenteditable="true">${data[key]}</td></tr>`
+    if (typeof data[key] !== 'object') ele += `<tr>${tdElement} <td  contenteditable="true">${key}</td><td  contenteditable="true">${data[key]}</td></tr>`
     else if (Array.isArray(data[key])) {
       let tblData = Array.isArray(data[key]) ? data[key] : [data[key]]
-      ele += `<tr><td>${operationElement}</td>${getArrTitleElement(key, tblData)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
+      ele += `<tr>${tdElement}${getArrTitleElement(key, tblData)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
     } else {
-      ele += `<tr><td>${operationElement}</td> <td contenteditable="true">${key} </td> <td>${getObjectTitleElement(key, data)} </td</tr>`
+      ele += `<tr>${tdElement} <td contenteditable="true">${key} </td> <td>${getObjectTitleElement(key, data)} </td</tr>`
     }
   }
   ele += '</table>'
@@ -811,11 +820,12 @@ function TableToJson() {
        if(outterKey===innerKey)xmlData=xmlData[outterKey];
     //json2xml_str
     const result = x2jsone.json2xml_str(xmlData)
-    console.log(result)
-    console.log(JSON.stringify(xmlData))
+    
+    console.log(xmlData)
     resolve(result)
   })
 }
+
 //遍历所有的节点
 function getTableData(parentNode) {
   //找到第一个节点
