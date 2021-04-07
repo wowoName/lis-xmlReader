@@ -84,9 +84,9 @@ function changeAssocatedPre(event) {
   //找到外层panel类型
   const { container } = getContainer(parentTdNode),
     type = container.querySelector('.panel-title').dataset.type;
-    if(container.classList.contains('outter')){
-      container.querySelector('.key-item').innerHTML=removeSpecialSymbols(event.target.innerHTML)
-    }
+  if (container.classList.contains('outter')) {
+    container.querySelector('.key-item').innerHTML = removeSpecialSymbols(event.target.innerHTML)
+  }
   if (type === 'json') changeAssocated('previousSibling', this, event)
   else if (type === 'array') changeTableTheadValues(parentTdNode, this)
   event.stopPropagation()
@@ -157,8 +157,8 @@ function changeAssocatedNext(event) {
   //当前panel为 json 并且下一个单元格为 panel执行
   if (type === 'json' && currentTdNextTdNodeType(this.nextSibling)) changeAssocated('nextSibling', this, event)
   //如果外层panel 为outter 修改值
-  if(container.classList.contains('outter')&&event.target.cellIndex===1){
-    container.querySelector('.key-item').innerHTML=removeSpecialSymbols(event.target.innerHTML)
+  if (container.classList.contains('outter') && event.target.cellIndex === 1) {
+    container.querySelector('.key-item').innerHTML = removeSpecialSymbols(event.target.innerHTML)
   }
 
   event.stopPropagation()
@@ -498,6 +498,12 @@ function deleteArrRows(targetElement) {
   const { parentNode } = deleteRows(targetElement)
   //表格序号排序
   sortTableRows(parentNode)
+  //父类型为json
+  // if (parentNode.children.length < 2) {
+  //   //如果子级小于两个类型为json
+  //   setParentNodeType(parentNode)
+  // }
+
   //如果行删除完将panel移除
   if (parentNode.children.length === 0) {
     // handlerDelPanel(parentNode)
@@ -506,6 +512,18 @@ function deleteArrRows(targetElement) {
   }
   let { container } = getContainer(parentNode)
   statisticsNumber(container, 'subtraction')
+}
+function setParentNodeType(parentNode) {
+  var { container } = getContainer(parentNode)
+  if (container) {
+    var keyNode = container.querySelector('.add-object-key'),
+      headerNode = container.querySelector('.panel-title')
+    if (keyNode || headerNode) {
+      keyNode.dataset.type = 'json'
+      headerNode.dataset.type = 'json'
+    }
+
+  }
 }
 /**
  * 删除表格panel 判断统计表格数
@@ -623,7 +641,7 @@ function renderRoot(data) {
 
   let panelElement = `<div class="panel container outter"> <header class='panel-title' data-type="json"> <img src="images/collapse.png" class='collapse-img'/> <span  class="key-item">${key}</span>:{<span class='count'>${valuesData.length}</span>}<div class="add-object-key" data-type='json'></div></header>`
   //渲染子级
-  panelElement += getJsonElement(data,false) //getTable([data])//
+  panelElement += getJsonElement(data, false) //getTable([data])//
 
   //#start
   // for (const item in data[key]) {
@@ -649,6 +667,8 @@ function renderTable(data) {
     } else if (typeof item === 'object' && Object.keys(item).length > 0) {
       //加载面板
       ele += getTable([item]) // getGroupTableElement([item]) //getPanel(item)
+    } else {
+      ele += `<tr><td contenteditable='true'>${item}</td></tr>`
     }
   }
   return ele
@@ -742,23 +762,31 @@ function getTableTdContainer(data, index) {
       // let groupColumnData = groupByColumn(value)
       // ele += `<td><div class="container"> <header class="panel-title"  data-type="array"><img src="images/collapse.png" class='collapse-img'/> <span contenteditable="true">${key}</span>[<span class='count'>${value.length}</span>]</header>`
       ele += `<td><div class="container">`
-      ele += getArrTitleElementPre(key, value)
+      // ele += getArrTitleElementPre(key, value)
+      // ele += getGroupTableElement(value)
 
-      ele += getGroupTableElement(value)
+
       //#start
+      //所有值是否都为string
+      var arrayValueIsString = value.every(v => typeof v === 'string')
+      if (arrayValueIsString) {
+        ele += getArrTitleElementPre(key, value)
+        ele += '<table class="groupTbl"> <thead><tr>  <th><div class="serial-number"></div>  </th>'
+        ele += `<th>${getArrayTableHeaderOperationElement(key)}</th>`
 
-      // ele += `<table class="embedded-table"><thead> <tr> <th><div class="serial-number"></div>  </th><th>${key}</th></tr> </thead><tbody>`
-      // for (const item in value) {
-      //   let operationElement = getTblRowOperationElement(+item + 1, 'copyJson', 'delJson')
-      //   if (typeof value[item] !== 'object') ele += `<tr><td>${operationElement}</td> <td  contenteditable="true">${value[item]}</td></tr>`
-      //   else if (Array.isArray(data[item])) {
-      //     let tblData = Array.isArray(value[item]) ? value[item] : [value[item]]
-      //     ele += `<tr><td>${operationElement}</td>${getArrTitleElement(item, tblData)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
-      //   } else {
-      //     ele += `<tr><td>${operationElement}</td>  <td>${getObjectTitleElement(item, value)} </td</tr>`
-      //   }
-      // }
-      // ele += '</tbody></table>'
+        ele += '</tr></thead><tbody>'
+
+        for (let tdIndex = 0; tdIndex < value.length; tdIndex++) {
+          let operationElement = getTblRowOperationElement(tdIndex + 1, 'copyJson', 'delJson')
+          ele += `<tr><td>${operationElement}</td>  <td contenteditable='true'>${value[tdIndex]} </td> </tr>`
+        }
+        ele += '</tbody></table>'
+      } else {
+
+        ele += getTableTdContainerObjectAndArr(key, value)
+
+      }
+
       //#end
       ele += '</div></td>'
     } else {
@@ -766,6 +794,44 @@ function getTableTdContainer(data, index) {
       //<div class="container"><p class='panel-title'  data-type="json"><img src="images/collapse.png" class='collapse-img'/>  <span contenteditable="true">${key}</span>{哈哈${Object.keys(value).length}}</p>${getJsonElement(value)}</div>
     }
   }
+  return ele
+}
+
+function getTableTdContainerString(key, value) {
+  let ele = getArrTitleElementPre(key, value)
+  ele += getGroupTableElement(value)
+  return ele
+}
+
+function getTableTdContainerObjectAndArr(key, value) {
+  var groupData = groupByColumn(value)
+  let ele = `<table class="embedded-table"><thead> <tr> <th><div class="serial-number"></div>  </th><th>${key}</th></tr> </thead><tbody>`
+  var tdIndex = 0;
+  for (const itema in groupData) {
+    const element = groupData[itema];
+    tdIndex++
+    let operationElement = getTblRowOperationElement(tdIndex, 'copyJson', 'delJson')
+    if (typeof element !== 'object') ele += `<tr><td>${operationElement}</td> <td  contenteditable="true">${element}</td></tr>`
+    else if (Array.isArray(element)) {
+      let tblData = Array.isArray(element) ? element : [element]
+      ele += `<tr><td>${operationElement}</td>${getArrTitleElement(key, element)} </div></td> </tr>` //`<tr><td>${key}</td><td>${data[key]}</td></tr>`
+    } else {
+      // ele += `<tr><td>${operationElement}</td>  <td>${renderTable([element])} </td</tr>`
+      //start
+      ele += `<tr><td>${operationElement}</td>  <td>`
+      // for (let index = 0; index < data.length; index++) {
+      //   const element = data[index]
+      //   tblIndex++
+      //   ele += `<tr ><td>${getTblRowOperationElement(tblIndex)}</td>${getTableTdContainer(element)}</tr>`
+      // }
+      ele += getTable([element])
+      ele += ' </td</tr>'
+
+      //end
+    }
+
+  }
+  ele += '</tbody></table>'
   return ele
 }
 function getGroupTableElement(data) {
@@ -778,10 +844,10 @@ function getGroupTableElement(data) {
   }
   return ele
 }
-function getJsonElement(data,showFirstTd=true) {
+function getJsonElement(data, showFirstTd = true) {
   let ele = '<table class="embedded-table">',
     operationElement = getTblRowOperationElement('', 'copyJson', 'delJson'),
-    tdElement=showFirstTd?`<td>${operationElement}</td>`:'<td style="display:none"></td>';
+    tdElement = showFirstTd ? `<td>${operationElement}</td>` : '<td style="display:none"></td>';
   for (const key in data) {
     if (typeof data[key] !== 'object') ele += `<tr>${tdElement} <td  contenteditable="true">${key}</td><td  contenteditable="true">${data[key]}</td></tr>`
     else if (Array.isArray(data[key])) {
@@ -814,14 +880,14 @@ function TableToJson() {
   return new Promise((resolve, reject) => {
     let container = document.getElementById('wrapper'),
       xmlData = getTableData(container);
-      // xmlData=xmlData[ Object.keys(xmlData)[0]]
-      let outterKey=Object.keys(xmlData)[0];
-       innerKey=Object.keys(xmlData[ outterKey])[0];
-       if(outterKey===innerKey)xmlData=xmlData[outterKey];
+    // xmlData=xmlData[ Object.keys(xmlData)[0]]
+    let outterKey = Object.keys(xmlData)[0];
+    innerKey = Object.keys(xmlData[outterKey])[0];
+    if (outterKey === innerKey) xmlData = xmlData[outterKey];
     //json2xml_str
     const result = x2jsone.json2xml_str(xmlData)
-    
-    console.log(xmlData)
+    console.log(JSON.stringify(xmlData))
+    console.log(result)
     resolve(result)
   })
 }
@@ -838,12 +904,12 @@ function getTableData(parentNode) {
   //节点类型
   xmlJson[tagKey] = tagType === 'array' ? [] : {}
   //获取表格数据
-  xmlJson[tagKey] = getTagData(tagType, childrenList.parentNode)
+  xmlJson[tagKey] = getTagData(tagType, childrenList.parentNode, xmlJson[tagKey])
   return xmlJson
 }
 //获取标签下的表格数据
-function getTagData(type, parentNode) {
-  return type === 'array' ? getArrayXmlData(parentNode) : getJsonXmlData(parentNode)
+function getTagData(type, parentNode, parentData) {
+  return type === 'array' ? getArrayXmlData(parentNode, parentData) : getJsonXmlData(parentNode)
 }
 /**
  * json类型表格数据
@@ -874,7 +940,7 @@ function getJsonXmlData(parentNode) {
   return xmlData
 }
 //数组类型表格数据
-function getArrayXmlData(parentNode) {
+function getArrayXmlData(parentNode, parentData) {
   //表格element
   let xmlData = parentNode.querySelector('table'),
     //当前表格数组集合
@@ -883,8 +949,8 @@ function getArrayXmlData(parentNode) {
   while (xmlData && xmlData.nodeName === 'TABLE') {
     //数组对象 key
     let objectKeys = xmlData.querySelector('thead').querySelectorAll('th')
-
     //表头列名称
+    allKeysData = [];
     objectKeys.forEach((item, index) => {
       const key = item.querySelector('.key')
       allKeysData.push(removeSpecialSymbols(key?.innerHTML))
@@ -910,9 +976,21 @@ function getArrayXmlData(parentNode) {
     xmlData = xmlData.nextSibling
   }
   // 如果只有一列 并且值为字符串 合并
-  if (allKeysData.length === 2) {
-    return xmlArrayData.map(v => v[keyFirstChatNotNumber(allKeysData[1])])
+  // var { container } = getContainer(parentNode.parentNode),
+  //   parentType = 'json',
+  //   parentKey = '';
+  // if (container) {
+  //   parentType = container.querySelector('.add-object-key').dataset.type;
+  //   parentKey = removeSpecialSymbols(container.querySelector('.key-item').innerHTML)
+  // }
+
+  var _keys = keyFirstChatNotNumber(allKeysData[1]),
+    allValues = xmlArrayData.map(v => v[_keys]),
+    valuesISString = allValues.every(v => typeof v === 'string')
+  if (allKeysData.length === 2 && valuesISString) {
+    return allValues
   }
+  console.log(xmlArrayData)
   return xmlArrayData
 }
 
